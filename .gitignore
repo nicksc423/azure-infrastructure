@@ -1,0 +1,5 @@
+*.backup
+.terraform/
+**/out/**
+.DS_Store
+*.terraform.lock.hcl
