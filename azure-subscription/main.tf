@@ -81,7 +81,7 @@ module "recovery-vault" {
 # Module: Container Registries
 # ------------------
 # Here we provision our various container registries.
-module "bbt-registry" {
+module "registry" {
     source = "../modules/container-registry"
 
     registry_name = "${var.resource_prefix}registry"
@@ -105,7 +105,7 @@ module "dns" {
 #####################################
 
 #####################################
-# DEV RESOURCES
+# ENV RESOURCES
 #####################################
 
 # ---------------
@@ -153,7 +153,7 @@ module "aks" {
 
     region = var.region
     resource_group = azurerm_resource_group.dev
-    registry = module.bbt-registry.registry
+    registry = module.registry.registry
 
     cluster_name = "${var.resource_prefix}-dev"
     kubernetes_version = "1.21.2"
@@ -176,155 +176,5 @@ module "aks" {
 }
 
 #####################################
-# END DEV RESOURCES
-#####################################
-
-#####################################
-# STAGING RESOURCES
-#####################################
-
-# ---------------
-# Resource Groups
-# ---------------
-# Cloud resources belong to resource groups which provides a way to organize resources for billing and management
-# purposes. Everything in the subscription will be put under one resource group
-resource "azurerm_resource_group" "staging" {
-    name = "${var.resource_prefix}-staging"
-    location = var.region
-}
-
-# --------------
-# Module: VNET
-# --------------
-# We make a VNET for dev to store our AKS cluster and a Gitlab runner to deploy to it
-
-module "staging_vnet" {
-  source = "../modules/vnet"
-  region = var.region
-  resource_group = azurerm_resource_group.staging
-  resource_name = "${var.resource_prefix}-staging"
-}
-
-# --------------
-# Module: Postgres
-# --------------
-# Create a Postgres Server + Databases
-
-module "staging_postgres" {
-    source = "../modules/postgres"
-
-    db_name = "${var.resource_prefix}-staging"
-    region = var.region
-    resource_group = azurerm_resource_group.staging
-}
-
-# --------------------------
-# Module: Azure Kubernetes Cluster
-# --------------------------
-# Here we make the AKS cluster.  The are much more in-depth comments in the module
-# This is a very complicated module that creates a lot of infra (DNS, Networking, Identity, AKS, etc)
-module "staging_aks" {
-    source = "../modules/aks"
-
-    region = var.region
-    resource_group = azurerm_resource_group.staging
-    registry = module.bbt-registry.registry
-
-    cluster_name = "${var.resource_prefix}-staging"
-    kubernetes_version = "1.21.2"
-    cluster_min_nodes = 3
-    cluster_max_nodes = 3
-    agent_size = "Standard_B4ms"
-    node_admin_username = "icmadmin"
-    node_admin_pubkey_file = "admin_key.pub"
-
-    vnet = module.staging_vnet.vnet
-    subnet_cidr = "172.16.2.0/24"
-
-    authorized_api_ips = concat(var.staff_ips)
-    staff_ips = var.staff_ips
-
-    dns_root_zone = module.dns.root_zone
-    dns_root_rg = azurerm_resource_group.general
-    dns_zone_name = "staging"
-    dns_app_zone_names = ["app"]
-}
-
-#####################################
-# END STAGING RESOURCES
-#####################################
-
-#####################################
-# PROD RESOURCES
-#####################################
-
-# ---------------
-# Resource Groups
-# ---------------
-# Cloud resources belong to resource groups which provides a way to organize resources for billing and management
-# purposes. Everything in the subscription will be put under one resource group
-resource "azurerm_resource_group" "prod" {
-    name = "${var.resource_prefix}-prod"
-    location = var.region
-}
-
-# --------------
-# Module: VNET
-# --------------
-# We make a VNET for dev to store our AKS cluster and a Gitlab runner to deploy to it
-
-module "prod_vnet" {
-  source = "../modules/vnet"
-  region = var.region
-  resource_group = azurerm_resource_group.prod
-  resource_name = "${var.resource_prefix}-prod"
-}
-
-# --------------
-# Module: Postgres
-# --------------
-# Create a Postgres Server + Databases
-
-module "prod_postgres" {
-    source = "../modules/postgres"
-
-    db_name = "${var.resource_prefix}-prod"
-    region = var.region
-    resource_group = azurerm_resource_group.prod
-}
-
-# --------------------------
-# Module: Azure Kubernetes Cluster
-# --------------------------
-# Here we make the AKS cluster.  The are much more in-depth comments in the module
-# This is a very complicated module that creates a lot of infra (DNS, Networking, Identity, AKS, etc)
-module "prod_aks" {
-    source = "../modules/aks"
-
-    region = var.region
-    resource_group = azurerm_resource_group.prod
-    registry = module.bbt-registry.registry
-
-    cluster_name = "${var.resource_prefix}-prod"
-    kubernetes_version = "1.21.2"
-    cluster_min_nodes = 3
-    cluster_max_nodes = 3
-    agent_size = "Standard_B4ms"
-    node_admin_username = "icmadmin"
-    node_admin_pubkey_file = "admin_key.pub"
-
-    vnet = module.prod_vnet.vnet
-    subnet_cidr = "172.16.2.0/24"
-
-    authorized_api_ips = concat(var.staff_ips)
-    staff_ips = var.staff_ips
-
-    dns_root_zone = module.dns.root_zone
-    dns_root_rg = azurerm_resource_group.general
-    dns_zone_name = "prod"
-    dns_app_zone_names = ["app"]
-}
-
-#####################################
-# PROD RESOURCES
+# END ENV RESOURCES
 #####################################
