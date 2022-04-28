@@ -10,7 +10,7 @@ terraform {
         resource_group_name = "ops"
         storage_account_name = "ops"
         container_name = "ops-tf"
-        key = "bbt-main.tfstate"
+        key = "main.tfstate"
     }
 }
 
