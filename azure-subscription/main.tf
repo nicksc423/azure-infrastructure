@@ -166,6 +166,7 @@ module "aks" {
     vnet = module.vnet.vnet
     subnet_cidr = "172.16.2.0/24"
 
+    # Could add other IPs here (I.E. CICD runner ips)
     authorized_api_ips = concat(var.staff_ips)
     staff_ips = var.staff_ips
 
